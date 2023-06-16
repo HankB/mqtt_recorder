@@ -9,3 +9,8 @@ sudo apt install libssl-dev build-essential cmake
 ```
 
 Minimum Supported Rust Version (MSRV) v1.63.0
+
+## Status
+
+* Example provided by paho does not build <https://github.com/eclipse/paho.mqtt.rust#example>
+* Example at <https://www.emqx.com/en/blog/how-to-use-mqtt-in-rust> Does
