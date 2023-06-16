@@ -1,16 +1,43 @@
+// code slavishly copied from https://www.emqx.com/en/blog/how-to-use-mqtt-in-rust
+// "The code for subscribe"
+
 use std::{
     env,
     process,
+    thread,
     time::Duration
 };
 
 extern crate paho_mqtt as mqtt;
 
-const DFLT_BROKER:&str = "tcp://polana3:1883";
-const DFLT_CLIENT:&str = "rust_publish";
-const DFLT_TOPICS:&[&str] = &["rust/mqtt", "rust/test"];
-// Define the qos.
-const QOS:i32 = 1;
+const DFLT_BROKER:&str = "tcp://polana:1883";
+const DFLT_CLIENT:&str = "rust_subscribe";
+const DFLT_TOPICS:&[&str] = &["#", "#"];
+// The qos list that match topics above.
+const DFLT_QOS:&[i32] = &[0, 1];
+
+// Reconnect to the broker when connection is lost.
+fn try_reconnect(cli: &mqtt::Client) -> bool
+{
+    println!("Connection lost. Waiting to retry connection");
+    for _ in 0..12 {
+        thread::sleep(Duration::from_millis(5000));
+        if cli.reconnect().is_ok() {
+            println!("Successfully reconnected");
+            return true;
+        }
+    }
+    println!("Unable to reconnect after several attempts.");
+    false
+}
+
+// Subscribes to multiple topics.
+fn subscribe_topics(cli: &mqtt::Client) {
+    if let Err(e) = cli.subscribe_many(DFLT_TOPICS, DFLT_QOS) {
+        println!("Error subscribes topics: {:?}", e);
+        process::exit(1);
+    }
+}
 
 fn main() {
     let host = env::args().nth(1).unwrap_or_else(||
@@ -30,10 +57,18 @@ fn main() {
         process::exit(1);
     });
 
+    // Initialize the consumer before connecting.
+    let rx = cli.start_consuming();
+
     // Define the set of options for the connection.
+    let lwt = mqtt::MessageBuilder::new()
+        .topic("test")
+        .payload("Consumer lost connection")
+        .finalize();
     let conn_opts = mqtt::ConnectOptionsBuilder::new()
         .keep_alive_interval(Duration::from_secs(20))
-        .clean_session(true)
+        .clean_session(false)
+        .will_message(lwt)
         .finalize();
 
     // Connect and wait for it to complete or fail.
@@ -42,28 +77,29 @@ fn main() {
         process::exit(1);
     }
 
-    // Create a message and publish it.
-    // Publish message to 'test' and 'hello' topics.
-    for num in 0..5 {
-        let content =  "Hello world! ".to_string() + &num.to_string();
-        let mut msg = mqtt::Message::new(DFLT_TOPICS[0], content.clone(), QOS);
-        if num % 2 == 0 {
-            println!("Publishing messages on the {:?} topic", DFLT_TOPICS[1]);
-            msg = mqtt::Message::new(DFLT_TOPICS[1], content.clone(), QOS);
-        } else {
-            println!("Publishing messages on the {:?} topic", DFLT_TOPICS[0]);
-        }
-        let tok = cli.publish(msg);
+    // Subscribe topics.
+    subscribe_topics(&cli);
 
-                if let Err(e) = tok {
-                        println!("Error sending message: {:?}", e);
-                        break;
-                }
+    println!("Processing requests...");
+    for msg in rx.iter() {
+        if let Some(msg) = msg {
+            println!("{}", msg);
+        }
+        else if !cli.is_connected() {
+            if try_reconnect(&cli) {
+                println!("Resubscribe topics...");
+                subscribe_topics(&cli);
+            } else {
+                break;
+            }
+        }
     }
 
-
-    // Disconnect from the broker.
-    let tok = cli.disconnect(None);
-    println!("Disconnect from the broker");
-    tok.unwrap();
+    // If still connected, then disconnect now.
+    if cli.is_connected() {
+        println!("Disconnecting");
+        cli.unsubscribe_many(DFLT_TOPICS).unwrap();
+        cli.disconnect(None).unwrap();
+    }
+    println!("Exiting");
 }
