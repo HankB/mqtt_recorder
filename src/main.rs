@@ -12,20 +12,21 @@ extern crate paho_mqtt as mqtt;
 
 const DFLT_BROKER:&str = "tcp://polana:1883";
 const DFLT_CLIENT:&str = "rust_subscribe";
-const DFLT_TOPICS:&[&str] = &["#", "#"];
+// const DFLT_TOPICS:&[&str] = &["#", "#"];
+const TOPIC: &str = "#";
 // The qos list that match topics above.
-const DFLT_QOS:&[i32] = &[0, 1];
+// const DFLT_QOS:&[i32] = &[0, 1];
 
 // Reconnect to the broker when connection is lost.
 fn try_reconnect(cli: &mqtt::Client) -> bool
 {
     println!("Connection lost. Waiting to retry connection");
     for _ in 0..12 {
-        thread::sleep(Duration::from_millis(5000));
         if cli.reconnect().is_ok() {
             println!("Successfully reconnected");
             return true;
         }
+        thread::sleep(Duration::from_millis(500));
     }
     println!("Unable to reconnect after several attempts.");
     false
@@ -33,7 +34,7 @@ fn try_reconnect(cli: &mqtt::Client) -> bool
 
 // Subscribes to multiple topics.
 fn subscribe_topics(cli: &mqtt::Client) {
-    if let Err(e) = cli.subscribe_many(DFLT_TOPICS, DFLT_QOS) {
+    if let Err(e) = cli.subscribe(TOPIC, 0) {
         println!("Error subscribes topics: {:?}", e);
         process::exit(1);
     }
@@ -98,7 +99,7 @@ fn main() {
     // If still connected, then disconnect now.
     if cli.is_connected() {
         println!("Disconnecting");
-        cli.unsubscribe_many(DFLT_TOPICS).unwrap();
+        cli.unsubscribe(TOPIC).unwrap();
         cli.disconnect(None).unwrap();
     }
     println!("Exiting");
