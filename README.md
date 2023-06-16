@@ -2,6 +2,10 @@
 
 Application to read MQTT messages and store to MariaDB.
 
+## References
+
+* [paho-mqtt Rust API](https://docs.rs/paho-mqtt/latest/paho_mqtt/)
+
 ## Requirements
 
 ```text
