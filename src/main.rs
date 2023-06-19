@@ -32,7 +32,7 @@ fn try_reconnect(cli: &mqtt::Client) -> bool
     false
 }
 
-// Subscribes to multiple topics.
+// Subscribes to single topics.
 fn subscribe_topics(cli: &mqtt::Client) {
     if let Err(e) = cli.subscribe(TOPIC, 0) {
         println!("Error subscribes topics: {:?}", e);
@@ -62,14 +62,16 @@ fn main() {
     let rx = cli.start_consuming();
 
     // Define the set of options for the connection.
+    /*
     let lwt = mqtt::MessageBuilder::new()
         .topic("test")
         .payload("Consumer lost connection")
         .finalize();
+    */
     let conn_opts = mqtt::ConnectOptionsBuilder::new()
-        .keep_alive_interval(Duration::from_secs(20))
+        .keep_alive_interval(Duration::from_secs(5))
         .clean_session(false)
-        .will_message(lwt)
+        //.will_message(lwt)
         .finalize();
 
     // Connect and wait for it to complete or fail.
