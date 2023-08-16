@@ -55,23 +55,27 @@ fn main() {
     // Initialize the consumer before connecting.
     let rx = cli.start_consuming();
 
-    // Define the set of options for the connection.
-    /*
-    let lwt = mqtt::MessageBuilder::new()
-        .topic("test")
-        .payload("Consumer lost connection")
-        .finalize();
-    */
-    let conn_opts = mqtt::ConnectOptionsBuilder::new()
-        .keep_alive_interval(Duration::from_secs(5))
-        .clean_session(false)
-        //.will_message(lwt)
-        .finalize();
-
     // Connect and wait for it to complete or fail.
-    if let Err(e) = cli.connect(conn_opts) {
-        println!("Unable to connect:\n\t{:?}", e);
-        process::exit(1);
+
+    loop {
+        // Define the set of options for the connection.
+        /*
+        let lwt = mqtt::MessageBuilder::new()
+            .topic("test")
+            .payload("Consumer lost connection")
+            .finalize();
+        */
+        let conn_opts = mqtt::ConnectOptionsBuilder::new()
+            .keep_alive_interval(Duration::from_secs(5))
+            .clean_session(false)
+            //.will_message(lwt)
+            .finalize();
+        if let Err(e) = cli.connect(conn_opts) {
+            println!("Unable to connect:\n\t{:?}", e);
+            thread::sleep(Duration::from_millis(1000));
+        } else {
+            break;
+        }
     }
 
     // Subscribe topics.
