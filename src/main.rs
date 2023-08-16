@@ -1,12 +1,7 @@
 // code slavishly copied from https://www.emqx.com/en/blog/how-to-use-mqtt-in-rust
 // "The code for subscribe"
 
-use std::{
-    env,
-    process,
-    thread,
-    time::Duration
-};
+use std::{env, process, thread, time::Duration};
 
 extern crate paho_mqtt as mqtt;
 
@@ -18,8 +13,7 @@ const TOPIC: &str = "#";
 // const DFLT_QOS:&[i32] = &[0, 1];
 
 // Reconnect to the broker when connection is lost.
-fn try_reconnect(cli: &mqtt::Client) -> bool
-{
+fn try_reconnect(cli: &mqtt::Client) -> bool {
     println!("Connection lost. Waiting to retry connection");
     for _ in 0..12 {
         if cli.reconnect().is_ok() {
@@ -41,9 +35,9 @@ fn subscribe_topics(cli: &mqtt::Client) {
 }
 
 fn main() {
-    let host = env::args().nth(1).unwrap_or_else(||
-        DFLT_BROKER.to_string()
-    );
+    let host = env::args()
+        .nth(1)
+        .unwrap_or_else(|| DFLT_BROKER.to_string());
 
     // Define the set of options for the create.
     // Use an ID for a persistent session.
@@ -87,8 +81,7 @@ fn main() {
     for msg in rx.iter() {
         if let Some(msg) = msg {
             println!("{}", msg);
-        }
-        else if !cli.is_connected() {
+        } else if !cli.is_connected() {
             if try_reconnect(&cli) {
                 println!("Resubscribe topics...");
                 subscribe_topics(&cli);
