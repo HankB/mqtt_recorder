@@ -5,8 +5,8 @@ use std::{env, process, thread, time::Duration};
 
 extern crate paho_mqtt as mqtt;
 
-const DFLT_BROKER:&str = "tcp://polana:1883";
-const DFLT_CLIENT:&str = "rust_subscribe";
+const DFLT_BROKER: &str = "tcp://mqtt:1883";
+const DFLT_CLIENT: &str = "rust_subscribe_x";
 // const DFLT_TOPICS:&[&str] = &["#", "#"];
 const TOPIC: &str = "#";
 // The qos list that match topics above.
@@ -20,7 +20,7 @@ fn try_reconnect(cli: &mqtt::Client) -> bool {
             println!("Successfully reconnected");
             return true;
         }
-        thread::sleep(Duration::from_millis(500));
+        thread::sleep(Duration::from_millis(1000));
     }
     println!("Unable to reconnect after several attempts.");
     false
